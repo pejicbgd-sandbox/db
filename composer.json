@@ -1,0 +1,20 @@
+{
+    "name": "iporm/iporm",
+    "description": "Basic ORM package for PHP",
+    "type": "General",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ivan Pejic",
+            "email": "pejicbgd@hotmail.com"
+        }
+    ],
+    "require": {
+
+    },
+    "autoload": {
+        "psr-4": {
+            "Iporm\\": "src/Iporm/"
+        }
+    }
+}
