@@ -2,6 +2,8 @@
 
 namespace Iporm;
 
+use Helper;
+
 class Db
 {
     private $_con;
@@ -34,6 +36,8 @@ class Db
 
     private $_result;
 
+    private $helper;
+
 
     public function __construct()
     {
@@ -41,46 +45,13 @@ class Db
         $this->_innerJoin = '';
         $this->_leftJoin = '';
         $this->_where = '';
+        $this->helper = new Helper();
     }
 
     public function select($select = '*')
     {
         $this->_group = $select;
         $this->_queryType = 'select';
-        return $this;
-    }
-
-    public function from($table)
-    {
-        $this->_table = $table;
-        return $this;
-    }
-
-    public function insertInto($table, $keysAndValues)
-    {
-        $this->_queryType = 'insert_into';
-        $this->_table = $table;
-        $insertValues = [];
-
-        foreach($keysAndValues as $key => $value) {
-            $insertKeys[] = $key;
-
-            if(is_null($value)) {
-                $insertValues[] = 'NULL';
-            } elseif(is_int($key)) {
-                $insertValues[] = $value;
-            } elseif(is_array($value)) {
-                foreach($value as $k => $v) {
-                    $insertValues[] = mysqli_real_escape_string($this->_con, $v);
-                }
-            } else {
-                $insertValues[] = mysqli_real_escape_string($this->_con, $value);
-            }
-        }
-
-        $this->_insertKeys = $insertKeys;
-        $this->_insertValues = $insertValues;
-
         return $this;
     }
 
@@ -92,14 +63,26 @@ class Db
 
     public function update($table, $dataSet = [])
     {
+        try {
+            $helper->validate($table, 'string');
+        } catch(InvalidTypeException $e) {
+            echo $e->getMessageText();
+        }
+
         $this->_queryType = 'update';
         $this->_table = $table;
         $this->setUpdateDataSet($dataSet);
         return $this;
     }
 
-    public function where($whereEqualTo = [], $operand = '=')
+    public function where($whereEqualTo, $operand = '=')
     {
+        try {
+            $helper->validate($whereEqualTo, 'array');
+        } catch(InvalidTypeException $e) {
+            echo $e->getMessageText();
+        }
+
         $this->_where .= $this->setWhere($whereEqualTo, $operand);
         return $this;
     }
@@ -140,6 +123,46 @@ class Db
         return $this;
     }
 
+    public function from($table)
+    {
+        try {
+            $helper->validateScalar($table, 'string');
+        } catch(InvalidTypeException $e) {
+            echo $e->getMessageText();
+        }
+
+        $this->_table = $table;
+        return $this;
+    }
+
+    public function insertInto($table, $keysAndValues)
+    {
+        $this->_queryType = 'insert_into';
+        $this->_table = $table;
+        $insertValues = [];
+
+        foreach($keysAndValues as $key => $value) {
+            $insertKeys[] = $key;
+
+            if(is_null($value)) {
+                $insertValues[] = 'NULL';
+            } elseif(is_int($key)) {
+                $insertValues[] = $value;
+            } elseif(is_array($value)) {
+                foreach($value as $k => $v) {
+                    $insertValues[] = mysqli_real_escape_string($this->_con, $v);
+                }
+            } else {
+                $insertValues[] = mysqli_real_escape_string($this->_con, $value);
+            }
+        }
+
+        $this->_insertKeys = $insertKeys;
+        $this->_insertValues = $insertValues;
+
+        return $this;
+    }
+
     // TODO can parameters order be reversed here, and should it be?
     public function run($customQuery = false, $queryType = false)
     {
@@ -171,8 +194,7 @@ class Db
 
     private function runQuery()
     {
-        switch($this->_queryType)
-        {
+        switch($this->_queryType) {
             case 'delete':
                 $query = $this->getDeleteQuery();
                 $this->_queryResponse = mysqli_query($this->_con, $query);
@@ -188,12 +210,10 @@ class Db
             case 'select':
                 $query = $this->getSelectQuery();
                 $this->_queryResponse = mysqli_query($this->_con, $query);
-                if($this->_queryResponse)
-                {
+                if($this->_queryResponse) {
                     $this->_result = $this->getResults();
                 }
-                if($this->_result && $this->_result > 0)
-                {
+                if($this->_result && $this->_result > 0) {
                     return $this->_result;
                 }
                 return false;
@@ -598,8 +618,4 @@ class Db
         return $return;
     }
 
-    public function isIterable($whereEqualTo)
-    {
-        return (is_array($whereEqualTo) && count($whereEqualTo));
-    }
 }
