@@ -2,7 +2,7 @@
 
 namespace Iporm;
 
-class DB
+class Db
 {
     private $_con;
 
@@ -26,18 +26,15 @@ class DB
 
     private $_insertValues;
 
-    private $_insert_options;
+    private $_insertOptions;
 
-    private $_set_data;
+    private $_setData;
 
-    private $_query_response;
+    private $_queryResponse;
 
     private $_result;
 
-    /**
-    *   Constructor function
-    *   @param array
-    */
+
     public function __construct()
     {
         $this->_con = Connection::getInstance();
@@ -46,11 +43,6 @@ class DB
         $this->_where = '';
     }
 
-    /**
-     * Select statement
-     * @var string
-     * @return object
-     */
     public function select($select = '*')
     {
         $this->_group = $select;
@@ -64,33 +56,25 @@ class DB
         return $this;
     }
 
-    public function insertInto($table, $keys_and_values)
+    public function insertInto($table, $keysAndValues)
     {
         $this->_queryType = 'insert_into';
         $this->_table = $table;
         $insertValues = [];
 
-        foreach($keys_and_values as $key => $value)
-        {
+        foreach($keysAndValues as $key => $value) {
             $insertKeys[] = $key;
-            if(is_null($value))
-            {
+
+            if(is_null($value)) {
                 $insertValues[] = 'NULL';
-            }
-            elseif(is_int($key))
-            {
+            } elseif(is_int($key)) {
                 $insertValues[] = $value;
-            }
-            elseif(is_array($value))
-            {
-                foreach ($value as $k => $v)
-                {
-                    $insertValues[] = sprintf('%s', mysqli_real_escape_string($this->_con, $v));
+            } elseif(is_array($value)) {
+                foreach($value as $k => $v) {
+                    $insertValues[] = mysqli_real_escape_string($this->_con, $v);
                 }
-            }
-            else
-            {
-                $insertValues[] = sprintf('"%s"', mysqli_real_escape_string($this->_con, $value));
+            } else {
+                $insertValues[] = mysqli_real_escape_string($this->_con, $value);
             }
         }
 
@@ -106,35 +90,35 @@ class DB
         return $this;
     }
 
-    public function update($table, $data_set = [])
+    public function update($table, $dataSet = [])
     {
         $this->_queryType = 'update';
         $this->_table = $table;
-        $this->setUpdateDataSet($data_set);
+        $this->setUpdateDataSet($dataSet);
         return $this;
     }
 
-    public function where($where_equal_to = [], $operand = '=')
+    public function where($whereEqualTo = [], $operand = '=')
     {
-        $this->_where .= $this->setWhere($where_equal_to, $operand);
+        $this->_where .= $this->setWhere($whereEqualTo, $operand);
         return $this;
     }
 
-    public function whereOr($where_equal_to = [])
+    public function whereOr($whereEqualTo = [])
     {
-        $this->_where .= $this->setWhere($where_equal_to, 'or');
+        $this->_where .= $this->setWhere($whereEqualTo, 'or');
         return $this;
     }
 
-    public function whereIn($where_in = [])
+    public function whereIn($whereIn = [])
     {
-        $this->_where .= $this->setWhere($where_in, 'in');
+        $this->_where .= $this->setWhere($whereIn, 'in');
         return $this;
     }
 
-    public function whereNotIn($where_not_in = [])
+    public function whereNotIn($whereNotIn = [])
     {
-        $this->_where .= $this->setWhere($where_not_in, 'not in');
+        $this->_where .= $this->setWhere($whereNotIn, 'not in');
         return $this;
     }
 
@@ -156,33 +140,32 @@ class DB
         return $this;
     }
 
-    public function run($custom_query = false, $query_type = false)
+    // TODO can parameters order be reversed here, and should it be?
+    public function run($customQuery = false, $queryType = false)
     {
-        $valid_query_types = $this->getValidQueryTypes();
-        if($custom_query && !in_array($query_type, $valid_query_types))
-        {
-            $query_type = 'select';
+        if($customQuery && !in_array($queryType, $this->getValidQueryTypes())) {
+            // TODO Exception handling here 
+            $queryType = 'select';
         }
 
-        if(!$custom_query)
-        {
+        if(!$customQuery) {
             return $this->runQuery();
         }
-        else
-        {
-            //return self::run_custom_query($custom_query);
-        }
+        
+        //return self::run_custom_query($customQuery);
     }
 
     public function getSelected()
     {
         $result = [];
         $i = 0;
-        while( $i < $this->_result)
-        {
-            $result[] = mysqli_fetch_assoc($this->_query_response);
+
+        // TODO exception handling is $this->_result set here
+        while($i < $this->_result) {
+            $result[] = mysqli_fetch_assoc($this->_queryResponse);
             $i++;
         }
+
         return $result;
     }
 
@@ -192,20 +175,20 @@ class DB
         {
             case 'delete':
                 $query = $this->getDeleteQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
+                $this->_queryResponse = mysqli_query($this->_con, $query);
                 return true;
             break;
 
             case 'insert_into':
                 $query = $this->getInsertQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
+                $this->_queryResponse = mysqli_query($this->_con, $query);
                 return true;
             break;
 
             case 'select':
                 $query = $this->getSelectQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
-                if($this->_query_response)
+                $this->_queryResponse = mysqli_query($this->_con, $query);
+                if($this->_queryResponse)
                 {
                     $this->_result = $this->getResults();
                 }
@@ -218,7 +201,7 @@ class DB
 
             case 'update':
                 $query = $this->getUpdateQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
+                $this->_queryResponse = mysqli_query($this->_con, $query);
             break;
 
             default:
@@ -248,7 +231,7 @@ class DB
                 break;
 
             default:
-                echo '';
+                echo 'No valid query detected.';
                 break;
         }
     }
@@ -287,8 +270,9 @@ class DB
 
     private function getInsertQuery()
     {
-        return 'INSERT ' . (empty($this->_insert_options) ? '' : $this->_insert_options . ' ') . 'INTO ' . $this->_table .
-                ' (' . implode(',' . "\n\t", $this->_insertKeys) . ')' .
+        // insert options currently just for scalability
+        return 'INSERT ' . (empty($this->_insertOptions) ? '' : $this->_insertOptions . ' ') . 'INTO ' 
+                . $this->_table . ' (' . implode(',' . "\n\t", $this->_insertKeys) . ')' .
                 ' VALUES (' . "\n\t" .
                 implode(',' . "\n\t", $this->_insertValues) . "\n" .
                 ')' . "\n" .
@@ -309,238 +293,196 @@ class DB
         $query = 'UPDATE ' . "\n\t";
         $query .= $this->_table . "\n\t";
         $query .= " SET " . "\n\t";
-        $query .= $this->_set_data . "\n\t";
+        $query .= $this->_setData . "\n\t";
         $query .= $this->_where;
 
         return $query;
     }
 
-    private function setWhere($where_equal_to, $operand)
+    private function setWhere($whereEqualTo, $operand)
     {
+        // Insted default value, Exception handler
         $operand = $this->validateOperand($operand);
 
         $wheres = [];
-        if($this->isIterable($where_equal_to))
-        {
-            if($operand == 'between')
-            {
-                return $this->setBetween($where_equal_to);
+        if($this->isIterable($whereEqualTo)) {
+
+            if($operand == 'between') {
+                return $this->setBetween($whereEqualTo);
             }
 
-            if($operand == 'or')
-            {
-                return $this->setEqualToOr($where_equal_to);
+            if($operand == 'or') {
+                return $this->setEqualToOr($whereEqualTo);
             }
 
-            if($operand == 'in')
-            {
-                return $this->setIn($where_equal_to);
+            if($operand == 'in') {
+                return $this->setIn($whereEqualTo);
             }
 
-            if($operand == 'not in')
-            {
-                return $this->setNotIn($where_equal_to);
+            if($operand == 'not in') {
+                return $this->setNotIn($whereEqualTo);
             }
 
-            return $this->setEqualTo($where_equal_to, $operand);
+            return $this->setEqualTo($whereEqualTo, $operand);
         }
+
         return '';
     }
 
-    private function setEqualTo($where_equal_to, $operand)
+    private function setEqualTo($whereEqualTo, $operand)
     {
-        if($this->isIterable($where_equal_to))
-        {
-            foreach($where_equal_to as $key => $value)
-            {
-                if(is_null($value))
-                {
+        $wheres = [];
+        if($this->isIterable($whereEqualTo)) {
+            foreach($whereEqualTo as $key => $value) {
+
+                if(is_null($value)) {
                     $wheres[] = $key . ' IS NULL';
                 }
 
-                if(is_int($key))
-                {
+                if(is_int($key)) {
                     $wheres[] = $value;
                 }
 
-                if(is_int($value))
-                {
-                    $wheres[] = sprintf($key . ' ' . $operand . ' %s', mysqli_real_escape_string($this->_con, $value));
+                if(is_int($value)) {
+                    $wheres[] = $key . ' ' . $operand . ' ' . mysqli_real_escape_string($this->_con, $value);
                 }
 
-                if(is_array($value))
-                {
-                    foreach ($value as $k => $v)
-                    {
-                        $wheres[] = sprintf($key . ' ' .$operand . ' "%s"', mysqli_real_escape_string($this->_con, $v));
+                if(is_array($value)) {
+                    foreach ($value as $k => $v) {
+                        $wheres[] = $key . ' ' .$operand . ' ' . mysqli_real_escape_string($this->_con, $v);
                     }
                 }
 
-                if(is_string($value))
-                {
-                    $wheres[] = sprintf($key . ' ' . $operand . ' "%s"', mysqli_real_escape_string($this->_con, $value));
+                if(is_string($value)) {
+                    $wheres[] = $key . ' ' . $operand . ' ' . mysqli_real_escape_string($this->_con, $value);
                 }
             }
         }
 
-        if($this->_where !== '')
-        {
-            if(count($wheres) == 1)
-            {
+        if($this->_where !== '') {
+            if(count($wheres) == 1) {
                 return "\n\t AND " . $wheres[0];
             }
+
             return "\n\t" . implode(' AND' . "\n\t", $wheres);
         }
+
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
     public function setEqualToOr($where_equal_to)
     {
         $wheres = [];
-        foreach ($where_equal_to as $k => $v)
-        {
-            if (is_null($v))
-            {
+        foreach ($where_equal_to as $k => $v) {
+
+            if (is_null($v)) {
                 $wheres[] = $k . ' IS NULL';
-            }
-            elseif (is_int($k))
-            {
+            } elseif (is_int($k)) {
                 $wheres[] = $v;
-            }
-            elseif (is_array($v))
-            {
-                foreach ($v as $key => $value)
-                {
-                    if (is_null($value))
-                    {
+            } elseif (is_array($v)) {
+                foreach ($v as $key => $value) {
+
+                    if (is_null($value)) {
                         $wheres[] = $k . ' IS NULL';
-                    }
-                    elseif (is_int($k))
-                    {
+                    } elseif (is_int($k)) {
                         $wheres[] = $value;
-                    }
-                    else
-                    {
+                    } else {
                         $wheres[] = sprintf($k . ' = "%s"', mysqli_real_escape_string($this->_con, $value));
                     }
                 }
-            }
-            else
-            {
+            } else {
                 $wheres[] = sprintf($k . ' = "%s"', mysqli_real_escape_string($this->_con, $v));
             }
         }
 
-        if($this->_where !== '')
-        {
+        if($this->_where !== '') {
             return " AND (\n\t" . implode(' OR' . "\n\t", $wheres) . "\n\t)";
         }
+
         return " WHERE (\n\t" . implode(' OR'  . "\n\t", $wheres) . "\n\t)";
     }
 
-    private function setBetween($where_equal_to)
+    private function setBetween($whereEqualTo)
     {
-        $parameter = $where_equal_to[0];
-        $value1 = $where_equal_to[1][0];
-        $value2 = $where_equal_to[1][1];
+        $parameter = $whereEqualTo[0];
+        $value1 = $whereEqualTo[1][0];
+        $value2 = $whereEqualTo[1][1];
 
-        if(!is_string($where_equal_to[0]) || !is_array($where_equal_to[1]))
-        {
+        if(!is_string($whereEqualTo[0]) || !is_array($whereEqualTo[1])) {
             //throw new InvalidValueFormatException();
         }
 
         $wheres[] = sprintf(' %s' . ' BETWEEN ' . $value1 . ' AND ' . $value2, mysqli_real_escape_string($this->_con, $parameter));
 
-        if($this->_where !== '')
-        {
+        if($this->_where !== '') {
             return "\n\t" . implode(" AND \n\t", $wheres);
         }
+
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
-    public function setIn($where_in)
+    public function setIn($whereIn)
     {
         $wheres = [];
-        foreach ($where_in as $k => $v)
-        {
-            if (is_null($v))
-            {
+        foreach ($whereIn as $k => $v) {
+
+            if (is_null($v)) {
                 $wheres[] = $k . ' IS NULL';
-            }
-            elseif (is_int($k))
-            {
+            } elseif (is_int($k)) {
                 $wheres[] = $v;
-            }
-            elseif (is_int($v))
-            {
-                $wheres[] = sprintf($k . ' IN (%s)', mysqli_real_escape_string($this->_con, $v));
-            }
-            elseif (is_array($v))
-            {
-                $values = array();
-                foreach ($v as $value)
-                {
+            } elseif (is_int($v)) {
+                $wheres[] = $k . ' IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
+            } elseif (is_array($v)) {
+                $values = [];
+                foreach ($v as $value) {
                     $values[] = '"' . mysqli_real_escape_string($this->_con, $value) . '"';
                 }
-                $wheres[] = sprintf($k . ' IN (%s)', implode(', ', $values));
-            }
-            else
-            {
-                $wheres[] = sprintf($k . ' IN (%s)', mysqli_real_escape_string($this->_con, $v));
+                $wheres[] = $k . ' IN (' . implode(', ', $values) . ')';
+            } else {
+                $wheres[] = $k . ' IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
             }
         }
 
-        if($this->_where !== '')
-        {
-            if(count($wheres) == 1)
-            {
+        if($this->_where !== '') {
+            if(count($wheres) == 1) {
                 return "\n\t AND " . $wheres[0];
             }
+
             return "\n\t" . implode(" AND \n\t", $wheres);
         }
+
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
-    public function setNotIn($where_not_in)
+    public function setNotIn($whereNotIn)
     {
         $wheres = [];
-        foreach ($where_not_in as $k => $v)
-        {
-            if (is_null($v))
-            {
+        foreach ($whereNotIn as $k => $v) {
+            if (is_null($v)) {
                 $wheres[] = $k . ' IS NULL';
-            }
-            elseif (is_int($k))
-            {
+            } elseif (is_int($k)) {
                 $wheres[] = $v;
-            }
-            elseif (is_int($v))
-            {
-                $wheres[] = sprintf($k . ' NOT IN (%s)', mysqli_real_escape_string($this->_con, $v));
-            }
-            elseif (is_array($v))
-            {
-                $values = array();
-                foreach ($v as $value)
-                {
+            } elseif (is_int($v)) {
+                $wheres[] = $k . ' NOT IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
+            } elseif (is_array($v)) {
+                $values = [];
+                foreach ($v as $value) {
                     $values[] = '"' . mysqli_real_escape_string($this->_con, $value) . '"';
                 }
-                $wheres[] = sprintf($k . ' NOT IN (%s)', implode(', ', $values));
-            }
-            else
-            {
-                $wheres[] = sprintf($k . ' NOT IN (%s)', mysqli_real_escape_string($this->_con, $v));
+                $wheres[] = $k . ' NOT IN (' . implode(', ', $values) . ')';
+            } else {
+                $wheres[] = $k . ' NOT IN (' . mysqli_real_escape_string($this->_con, $v) .')';
             }
         }
 
-        if($this->_where !== '')
-        {
-            if(count($wheres) == 1)
-            {
+        if($this->_where !== '') {
+            if(count($wheres) == 1) {
                 return "\n\t AND " . $wheres[0];
             }
+
             return "\n\t" . implode(" AND \n\t", $wheres);
         }
+
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
@@ -567,69 +509,51 @@ class DB
         }
     }
 
-    private function setGroupBy($group_by)
+    private function setGroupBy($groupBy)
     {
-        if($group_by)
+        if($groupBy)
         {
-            $this->_groupBy = 'GROUP BY' . "\n\t" . $group_by. "\n";
+            $this->_groupBy = 'GROUP BY' . "\n\t" . $groupBy. "\n";
         }
     }
 
-    public function setUpdateDataSet($data_set)
+    public function setUpdateDataSet($dataSet)
     {
-        if($this->isIterable($data_set))
+        if($this->isIterable($dataSet))
         {
-            $this->_set_data = '';
-            $update = array();
-            foreach ($data_set as $k => $v)
-            {
-                if (is_numeric($k))
-                {
-                    if (!$v)
-                    {
+            $this->_setData = '';
+            $update = [];
+
+            foreach ($dataSet as $k => $v) {
+                //TODO neka automatska provera tipova, dinamicki unos koji je tip trazen ("is_numeric")
+                if (is_numeric($k)) {
+                    if (!$v) {
                         continue;
                     }
-
-                    $update[] = mysqli_real_escape_string($this->_con, $v) . ' = VALUES(' . mysqli_real_escape_string($this->_con, $v) . ')';
-                }
-                else
-                {
-                    if (is_null($v))
-                    {
+                    $update[] = mysqli_real_escape_string($this->_con, $v) . ' = VALUES (' . mysqli_real_escape_string($this->_con, $v) . ')';
+                } else {
+                    if (is_null($v)) {
                         $update[] = $k . ' = NULL';
-                    }
-                    elseif (is_int($k))
-                    {
+                    } elseif (is_int($k)) {
                         $update[] = $v;
-                    }
-                    elseif (is_array($v))
-                    {
-                        foreach ($v as $key => $value)
-                        {
-                            if (is_null($value))
-                            {
+                    } elseif (is_array($v)) {
+                        foreach ($v as $key => $value) {
+                            if (is_null($value)) {
                                 $update[] = $k . ' = NULL';
-                            }
-                            elseif (is_int($k))
-                            {
+                            } elseif (is_int($k)) {
                                 $update[] = $value;
-                            }
-                            else
-                            {
-                                $update[] = sprintf($k . ' = "%s"', mysqli_real_escape_string($this->_con, $value));
+                            } else {
+                                $update[] = $k . ' = "' . mysqli_real_escape_string($this->_con, $value) . '"';
                             }
                         }
-                    }
-                    else
-                    {
-                        $update[] = sprintf($k . ' = "%s"', mysqli_real_escape_string($this->_con, $v));
+                    } else {
+                        $update[] = $k . ' = "' . mysqli_real_escape_string($this->_con, $v) . '"';
                     }
                 }
             }
 
-            if (count($update))
-            {
-                $this->_set_data = "\t" . implode(',' . "\n\t", $update) . "\n";
+            if (count($update)) {
+                $this->_setData = "\t" . implode(',' . "\n\t", $update) . "\n";
             }
         }
     }
@@ -638,7 +562,7 @@ class DB
 
     public function getResults()
     {
-        return mysqli_num_rows($this->_query_response);
+        return mysqli_num_rows($this->_queryResponse);
     }
 
     public function getInsertedId()
@@ -666,17 +590,16 @@ class DB
     private function validateOperand($operand)
     {
         $return = $operand;
-        //TODO prebaci ovo u odvojenu get metodu
-        $valid_operands = $this->getValidOperands();
-        if(!in_array($operand, $valid_operands))
+        if(!in_array($operand, $this->getValidOperands()))
         {
             $return = '=';
         }
+
         return $return;
     }
 
-    public function isIterable($where_equal_to)
+    public function isIterable($whereEqualTo)
     {
-        return (is_array($where_equal_to) && count($where_equal_to));
+        return (is_array($whereEqualTo) && count($whereEqualTo));
     }
 }
