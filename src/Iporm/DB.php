@@ -5,39 +5,21 @@ namespace Iporm;
 class DB
 {
     private $_con;
-
     private $_queryType;
-
     private $_table;
-
     private $_group;
-
     private $_groupBy;
-
     private $_where;
-
     private $_between;
-
     private $_innerJoin;
-
     private $_leftJoin;
-
     private $_insertKeys;
-
     private $_insertValues;
-
-    private $_insert_options;
-
-    private $_set_data;
-
-    private $_query_response;
-
+    private $_insertOptions;
+    private $_setData;
+    private $_queryResponse;
     private $_result;
 
-    /**
-    *   Constructor function
-    *   @param array
-    */
     public function __construct()
     {
         $this->_con = Connection::getInstance();
@@ -46,11 +28,6 @@ class DB
         $this->_where = '';
     }
 
-    /**
-     * Select statement
-     * @var string
-     * @return object
-     */
     public function select($select = '*')
     {
         $this->_group = $select;
@@ -58,6 +35,9 @@ class DB
         return $this;
     }
 
+    /**
+    *
+    */
     public function from($table)
     {
         $this->_table = $table;
@@ -180,7 +160,7 @@ class DB
         $i = 0;
         while( $i < $this->_result)
         {
-            $result[] = mysqli_fetch_assoc($this->_query_response);
+            $result[] = mysqli_fetch_assoc($this->_queryResponse);
             $i++;
         }
         return $result;
@@ -192,20 +172,20 @@ class DB
         {
             case 'delete':
                 $query = $this->getDeleteQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
+                $this->_queryResponse = mysqli_query($this->_con, $query);
                 return true;
             break;
 
             case 'insert_into':
                 $query = $this->getInsertQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
+                $this->_queryResponse = mysqli_query($this->_con, $query);
                 return true;
             break;
 
             case 'select':
                 $query = $this->getSelectQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
-                if($this->_query_response)
+                $this->_queryResponse = mysqli_query($this->_con, $query);
+                if($this->_queryResponse)
                 {
                     $this->_result = $this->getResults();
                 }
@@ -218,7 +198,7 @@ class DB
 
             case 'update':
                 $query = $this->getUpdateQuery();
-                $this->_query_response = mysqli_query($this->_con, $query);
+                $this->_queryResponse = mysqli_query($this->_con, $query);
             break;
 
             default:
@@ -287,7 +267,7 @@ class DB
 
     private function getInsertQuery()
     {
-        return 'INSERT ' . (empty($this->_insert_options) ? '' : $this->_insert_options . ' ') . 'INTO ' . $this->_table .
+        return 'INSERT ' . (empty($this->_insertOptions) ? '' : $this->_insertOptions . ' ') . 'INTO ' . $this->_table .
                 ' (' . implode(',' . "\n\t", $this->_insertKeys) . ')' .
                 ' VALUES (' . "\n\t" .
                 implode(',' . "\n\t", $this->_insertValues) . "\n" .
@@ -309,7 +289,7 @@ class DB
         $query = 'UPDATE ' . "\n\t";
         $query .= $this->_table . "\n\t";
         $query .= " SET " . "\n\t";
-        $query .= $this->_set_data . "\n\t";
+        $query .= $this->_setData . "\n\t";
         $query .= $this->_where;
 
         return $query;
@@ -579,7 +559,7 @@ class DB
     {
         if($this->isIterable($data_set))
         {
-            $this->_set_data = '';
+            $this->_setData = '';
             $update = array();
             foreach ($data_set as $k => $v)
             {
@@ -629,7 +609,7 @@ class DB
 
             if (count($update))
             {
-                $this->_set_data = "\t" . implode(',' . "\n\t", $update) . "\n";
+                $this->_setData = "\t" . implode(',' . "\n\t", $update) . "\n";
             }
         }
     }
@@ -638,7 +618,7 @@ class DB
 
     public function getResults()
     {
-        return mysqli_num_rows($this->_query_response);
+        return mysqli_num_rows($this->_queryResponse);
     }
 
     public function getInsertedId()
