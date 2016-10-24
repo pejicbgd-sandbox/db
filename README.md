@@ -5,7 +5,7 @@ Iporm is a basic [ORM](http://en.wikipedia.org/wiki/Object_relational_mapping) p
 
 There are plenty of excellent wrappers out there, but I hope I will save you some precious time with this one.
 
-#Installation
+###Installation
 
 
 Simplest way to install it is via composer, just pop up you console, and hit 
