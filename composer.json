@@ -1,7 +1,9 @@
 {
     "name": "iporm/iporm",
-    "description": "Basic ORM package for PHP",
-    "type": "General",
+    "type": "library",
+    "keywords": ["orm", "php", "mysql", "wrapper"],
+    "homepage": "https://github.com/pejicbgd/iporm",
+    "description": "Basic MySQL ORM package for PHP",
     "license": "MIT",
     "authors": [
         {
@@ -10,7 +12,7 @@
         }
     ],
     "require": {
-
+        "php": ">=5.3.0"
     },
     "autoload": {
         "psr-4": {
