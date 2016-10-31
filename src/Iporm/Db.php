@@ -23,6 +23,9 @@ class Db
     private $_result;
     private $helper;
 
+    /**
+     * Db constructor.
+     */
     public function __construct()
     {
         $this->_con = Connection::getInstance();
@@ -32,6 +35,12 @@ class Db
         $this->helper = new Helper();
     }
 
+    /**
+     * SELECT statement
+     *
+     * @param string $select
+     * @return $this
+     */
     public function select($select = '*')
     {
         $this->_group = $select;
@@ -40,13 +49,25 @@ class Db
         return $this;
     }
 
+    /**
+     * DELETE statement
+     *
+     * @return $this
+     */
     public function delete()
     {
         $this->_queryType = 'delete';
         return $this;
     }
 
-    public function update($table, $dataSet)
+    /**
+     * UPDATE statement
+     *
+     * @param string $table
+     * @param array $dataSet
+     * @return $this
+     */
+    public function update($table, $dataSet = [])
     {
         $this->_queryType = 'update';
         $this->_table = $table;
@@ -55,54 +76,110 @@ class Db
         return $this;
     }
 
+    /**
+     * WHERE condition
+     *
+     * @param array $whereEqualTo
+     * @param string $operand
+     * @return $this
+     */
     public function where($whereEqualTo = [], $operand = '=')
     {
         $this->_where .= $this->setWhere($whereEqualTo, $operand);
         return $this;
     }
 
+    /**
+     * WHERE value = A OR value = B
+     *
+     * @param array $whereEqualTo
+     * @return $this
+     */
     public function whereOr($whereEqualTo = [])
     {
         $this->_where .= $this->setWhere($whereEqualTo, 'or');
         return $this;
     }
 
+    /**
+     * WHERE value IN (..values..)
+     *
+     * @param array $whereIn
+     * @return $this
+     */
     public function whereIn($whereIn = [])
     {
         $this->_where .= $this->setWhere($whereIn, 'in');
         return $this;
     }
 
+    /**
+     * WHERE value NOT IN (..values..)
+     *
+     * @param array $whereNotIn
+     * @return $this
+     */
     public function whereNotIn($whereNotIn = [])
     {
         $this->_where .= $this->setWhere($whereNotIn, 'not in');
         return $this;
     }
 
+    /**
+     * INNER JOIN statement
+     *
+     * @param array $innerJoin
+     * @return $this
+     */
     public function innerJoin($innerJoin = [])
     {
         $this->setInnerJoin($innerJoin);
         return $this;
     }
 
+    /**
+     * LEFT JOIN statement
+     *
+     * @param array $leftJoin
+     * @return $this
+     */
     public function leftJoin($leftJoin = [])
     {
         $this->setLeftJoin($leftJoin);
         return $this;
     }
 
+    /**
+     * GROUP BY condition
+     *
+     * @param string $groupBy
+     * @return $this
+     */
     public function groupBy($groupBy = '')
     {
         $this->setGroupBy($groupBy);
         return $this;
     }
 
+    /**
+     * Set table as operation object
+     *
+     * @param string $table
+     * @return $this
+     */
     public function from($table)
     {
         $this->_table = $table;
         return $this;
     }
 
+    /**
+     * INSERT key and value pairs into table
+     *
+     * @param string $table
+     * @param array $keysAndValues
+     * @return $this
+     */
     public function insertInto($table, $keysAndValues = [])
     {
         $this->_queryType = 'insert_into';
@@ -111,7 +188,7 @@ class Db
         $insertKeys = [];
         $insertValues = [];
 
-        if($this->isIterable($keysAndValues)) {
+        if($this->helper->isIterable($keysAndValues)) {
             foreach($keysAndValues as $key => $value) {
                 $insertKeys[] = $key;
 
@@ -135,6 +212,13 @@ class Db
         return $this;
     }
 
+    /**
+     * Run custom or preselected query
+     *
+     * @param bool $queryType
+     * @param bool $customQuery
+     * @return bool|int
+     */
     public function run($queryType = false, $customQuery = false)
     {
         if(!$customQuery) {
@@ -147,6 +231,11 @@ class Db
         }
     }
 
+    /**
+     * Run helper
+     *
+     * @return bool|int
+     */
     private function runQuery()
     {
         switch($this->_queryType) {
@@ -185,16 +274,23 @@ class Db
         }
     }
 
+    /**
+     * Prints active query
+     *
+     * @return string
+     */
     public function show()
     {
         echo $this->getCurrentQuery();
     }
 
-/*--------- GET SELECTED FORMATED QUERIES ------------*/
-
+    /**
+     * Active query helper
+     *
+     * @return string
+     */
     private function getCurrentQuery()
     {
-        $query = '';
         switch($this->_queryType) {
             case 'delete':
                 $query = $this->getDeleteQuery();
@@ -220,6 +316,11 @@ class Db
         return $query;
     }
 
+    /**
+     * Forms SELECT query
+     *
+     * @return string
+     */
     private function getSelectQuery()
     {
         $query = 'SELECT ' . $this->_group . "\n\t";
@@ -246,6 +347,11 @@ class Db
         return $query;
     }
 
+    /**
+     * Forms INSERT query
+     *
+     * @return string
+     */
     private function getInsertQuery()
     {
         // insert options currently just for scalability
@@ -257,6 +363,11 @@ class Db
                 '';
     }
 
+    /**
+     * Forms DELETE Query
+     *
+     * @return string
+     */
     private function getDeleteQuery()
     {
         $query = 'DELETE ' . "\n\t";
@@ -266,6 +377,11 @@ class Db
         return $query;
     }
 
+    /**
+     * Forms UPDATE query
+     *
+     * @return string
+     */
     private function getUpdateQuery()
     {
         $query = 'UPDATE ' . "\n\t";
@@ -277,11 +393,17 @@ class Db
         return $query;
     }
 
+    /**
+     * Sets internal WHERE
+     *
+     * @param array $whereEqualTo
+     * @param string $operand
+     * @return string
+     */
     private function setWhere($whereEqualTo, $operand)
     {
         $operand = $this->helper->validateOperand($operand);
 
-        $wheres = [];
         if($this->helper->isIterable($whereEqualTo)) {
 
             if($operand == 'or') {
@@ -302,6 +424,13 @@ class Db
         return '';
     }
 
+    /**
+     * Sets internal equal TO
+     *
+     * @param array $whereEqualTo
+     * @param string $operand
+     * @return string
+     */
     private function setEqualTo($whereEqualTo, $operand)
     {
         $wheres = [];
@@ -343,26 +472,34 @@ class Db
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
-    public function setEqualToOr($where_equal_to)
+    /**
+     * Sets internal equal TO OR
+     *
+     * @param array $whereEqualTo
+     * @return string
+     */
+    private function setEqualToOr($whereEqualTo)
     {
         $wheres = [];
-        foreach ($where_equal_to as $k => $v) {
-            if (is_null($v)) {
-                $wheres[] = $k . ' IS NULL';
-            } elseif (is_int($k)) {
-                $wheres[] = $v;
-            } elseif (is_array($v)) {
-                foreach ($v as $key => $value) {
-                    if (is_null($value)) {
-                        $wheres[] = $k . ' IS NULL';
-                    } elseif (is_int($k)) {
-                        $wheres[] = $value;
-                    } else {
-                        $wheres[] = $k . ' = "' . mysqli_real_escape_string($this->_con, $value) . '"';
+        if($this->helper->isIterable($whereEqualTo)) {
+            foreach ($whereEqualTo as $k => $v) {
+                if (is_null($v)) {
+                    $wheres[] = $k . ' IS NULL';
+                } elseif (is_int($k)) {
+                    $wheres[] = $v;
+                } elseif (is_array($v)) {
+                    foreach ($v as $key => $value) {
+                        if (is_null($value)) {
+                            $wheres[] = $k . ' IS NULL';
+                        } elseif (is_int($k)) {
+                            $wheres[] = $value;
+                        } else {
+                            $wheres[] = $k . ' = "' . mysqli_real_escape_string($this->_con, $value) . '"';
+                        }
                     }
+                } else {
+                    $wheres[] = $k . ' = "' . mysqli_real_escape_string($this->_con, $v) . '"';
                 }
-            } else {
-                $wheres[] = $k . ' = "' . mysqli_real_escape_string($this->_con, $v) . '"';
             }
         }
 
@@ -373,24 +510,32 @@ class Db
         return " WHERE (\n\t" . implode(' OR'  . "\n\t", $wheres) . "\n\t)";
     }
 
-    public function setIn($whereIn)
+    /**
+     * Sets internal IN
+     *
+     * @param array $whereIn
+     * @return string
+     */
+    private function setIn($whereIn)
     {
         $wheres = [];
-        foreach ($whereIn as $k => $v) {
-            if (is_null($v)) {
-                $wheres[] = $k . ' IS NULL';
-            } elseif (is_int($k)) {
-                $wheres[] = $v;
-            } elseif (is_int($v)) {
-                $wheres[] = $k . ' IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
-            } elseif (is_array($v)) {
-                $values = [];
-                foreach ($v as $value) {
-                    $values[] = '"' . mysqli_real_escape_string($this->_con, $value) . '"';
+        if($this->helper->isIterable($whereIn)) {
+            foreach ($whereIn as $k => $v) {
+                if (is_null($v)) {
+                    $wheres[] = $k . ' IS NULL';
+                } elseif (is_int($k)) {
+                    $wheres[] = $v;
+                } elseif (is_int($v)) {
+                    $wheres[] = $k . ' IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
+                } elseif (is_array($v)) {
+                    $values = [];
+                    foreach ($v as $value) {
+                        $values[] = '"' . mysqli_real_escape_string($this->_con, $value) . '"';
+                    }
+                    $wheres[] = $k . ' IN (' . implode(', ', $values) . ')';
+                } else {
+                    $wheres[] = $k . ' IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
                 }
-                $wheres[] = $k . ' IN (' . implode(', ', $values) . ')';
-            } else {
-                $wheres[] = $k . ' IN (' . mysqli_real_escape_string($this->_con, $v) . ')';
             }
         }
 
@@ -405,7 +550,13 @@ class Db
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
-    public function setNotIn($whereNotIn)
+    /**
+     * Set internal NOT IN
+     *
+     * @param array $whereNotIn
+     * @return string
+     */
+    private function setNotIn($whereNotIn)
     {
         $wheres = [];
         foreach ($whereNotIn as $k => $v) {
@@ -437,17 +588,27 @@ class Db
         return " WHERE \n\t" . implode(" AND \n\t", $wheres);
     }
 
-
+    /**
+     * Sets internal INNER JOIN
+     *
+     * @param array $innerJoin
+     * @return void
+     */
     private function setInnerJoin($innerJoin)
     {
         if($this->helper->isIterable($innerJoin)) {
-            foreach ($innerJoin as $join)
-            {
+            foreach ($innerJoin as $join) {
                 $this->_innerJoin .= ' INNER JOIN ' . $join . "\n\t";
             }
         }
     }
 
+    /**
+     * Sets internal LEFT JOIN
+     *
+     * @param array $leftJoin
+     * @return void
+     */
     private function setLeftJoin($leftJoin)
     {
         if($this->helper->isIterable($leftJoin)) {
@@ -457,6 +618,12 @@ class Db
         }
     }
 
+    /**
+     * Sets internal GROUP BY
+     *
+     * @param array $groupBy
+     * @return void
+     */
     private function setGroupBy($groupBy)
     {
         if($groupBy) {
@@ -464,7 +631,13 @@ class Db
         }
     }
 
-    public function setUpdateDataSet($dataSet)
+    /**
+     * Sets internal UPDATE data set
+     *
+     * @param array $dataSet
+     * @return void
+     */
+    private function setUpdateDataSet($dataSet)
     {
         if($this->helper->isIterable($dataSet)) {
             $this->_setData = '';
@@ -503,6 +676,11 @@ class Db
         }
     }
 
+    /**
+     * Returns SELECT statement data set
+     *
+     * @return array
+     */
     public function getSelected()
     {
         $result = [];
@@ -516,19 +694,33 @@ class Db
         return $result;
     }
 
+    /**
+     * Returns number of result rows
+     *
+     * @return int
+     */
     public function getResults()
     {
         return mysqli_num_rows($this->_queryResponse);
     }
 
+    /**
+     * Id of inserted row
+     *
+     * @return int|string
+     */
     public function getInsertedId()
     {
         return mysqli_insert_id($this->_con);
     }
 
+    /**
+     * Number of affected rows
+     *
+     * @return int
+     */
     public function getAffected()
     {
         return mysqli_affected_rows($this->_con);
     }
-
 }
